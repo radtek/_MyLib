@@ -13,8 +13,8 @@
 #include "_MyLib/src/sha2.h"
 #include "_MyLib/src/curl_client.h"
 
-#define _def_conn_timeout	10			// 10초
-#define _def_read_timeout	60 * 5		// 5분
+#define _def_conn_timeout	1000*10			// 10초
+#define _def_read_timeout	1000*60*5		// 5분
 
 /// @brief
 curl_client::curl_client() 
@@ -146,7 +146,7 @@ curl_client::http_get(
 	//
 	if (!prepare_perform(url))
 	{
-		log_err "prepare_perform() failed. " log_end;
+		log_err "prepare_perform() failed. url=%s", url log_end;
 		return false;
 	}
 
@@ -183,7 +183,7 @@ curl_client::http_get(
 	//
 	if (true != perform(http_response_code))
 	{
-		log_err "perform() failed." log_end;
+		log_err "perform() failed. url=%s", url log_end;
 		return false;
 	}
 
@@ -282,7 +282,10 @@ curl_client::http_download_file(
 	//
 	if (true != perform(http_response_code))
 	{
-		log_err "perform() failed." log_end;
+		log_err 
+			"perform() failed. url=%s", 
+			ctx->_url.c_str() 
+			log_end;
 		return false;
 	}
 
@@ -392,7 +395,7 @@ curl_client::http_file_upload(
 						forms, 
 						http_response_code))
 	{
-		log_err "perform() failed." log_end;
+		log_err "perform() failed. url=%s", url log_end;
 		return false;
 	}
 
@@ -541,7 +544,7 @@ curl_client::http_post(
 	//
 	if (true != perform(http_response_code))
 	{
-		log_err "perform() failed." log_end;
+		log_err "perform() failed. url=%s", url log_end;
 		return false;
 	}
 
@@ -574,13 +577,10 @@ bool curl_client::prepare_perform(_In_ const char* const url)
 		}
 
 		//
-		// Set timeout
-		//	목적지 서버상태가 Overload 상태인지, 또는 크리티컬한 에러가 있는 
-		//	상태인지에 따라 적용
-		//	e.g. 설정한 시간(10초)내에 서버에서 응답이 없을 경우 강제 해제
+		//	Connection timeout
 		//
 		curl_code = curl_easy_setopt(_curl,
-									 CURLOPT_CONNECTTIMEOUT,
+									 CURLOPT_CONNECTTIMEOUT_MS,
 									 _conn_timeout);
 		if (CURLE_OK != curl_code)
 		{
@@ -592,14 +592,13 @@ bool curl_client::prepare_perform(_In_ const char* const url)
 		}
 
 		//
-		//	Set connect timeout
-		//	굉장히 큰파일, 또는 느린 연결 속도(네트워크속도에 좌우됨) 등에 
-		//	따라 적용
-		//	e.g. 설정한 시간(90초) 내에 다운로드가 완료되지 않을 경우 
-		//	강제 해제
+		//	Read timeout
+		//
+		//	HTTP 응답 데이터 읽기 완료 타임아웃 (요청-응답 전체 완료 시간)
+		//	e.g. 설정한 시간(90초) 내에 다운로드가 완료되지 않을 경우 연결 강제 종료
 		//
 		curl_code = curl_easy_setopt(_curl,
-									 CURLOPT_TIMEOUT,
+									 CURLOPT_TIMEOUT_MS,
 									 _read_timeout);
 		if (CURLE_OK != curl_code)
 		{

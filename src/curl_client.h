@@ -120,8 +120,8 @@ private:
 	//	Options that applied on every I/O perform
 	//
 	std::string _url;
-	long _conn_timeout;
-	long _read_timeout;
+	long _conn_timeout;			// milliseconds 
+	long _read_timeout;			// milliseconds 
 	bool _follow_location;
 	bool _ssl_verify_peer;
 	bool _ssl_verify_host;
